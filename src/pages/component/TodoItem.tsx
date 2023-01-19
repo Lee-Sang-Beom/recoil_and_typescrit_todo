@@ -1,3 +1,4 @@
+import { text } from "node:stream/consumers";
 import React, { useState } from "react";
 import { useRecoilState } from "recoil";
 import { textListAtom, textAtom, countAtom, todoListType } from "../../store";
@@ -15,6 +16,16 @@ const TodoItem = (props: IProps): JSX.Element => {
     setIsEdit((prev) => !prev);
   };
 
+  const handleDelete = () => {
+    const newTextList = textList.filter((todoItem) => {
+      return todoItem.id !== props.todo.id;
+    });
+
+    setTextList(newTextList);
+    // debug 2 : 삭제 후, newTextList의 변화
+    // console.log(newTextList);
+  };
+
   // edit mode 활성화 후, input에 가해지는 event
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -30,6 +41,9 @@ const TodoItem = (props: IProps): JSX.Element => {
         return todoItem;
       }
     });
+
+    // debug 3 : 수정 중, newTextList의 변화
+    console.log(newTextList);
     setTextList(newTextList);
   };
 
@@ -51,20 +65,18 @@ const TodoItem = (props: IProps): JSX.Element => {
               <button onClick={handleEditMode}>
                 <span>Edit</span>
               </button>
-              <button>
+              <button onClick={handleDelete}>
                 <span>Del</span>
               </button>
             </div>
           </>
         ) : (
-          <>
-            <form className="edit_text_form" onSubmit={onSubmit}>
-              <input type="text" value={props.todo.text} onChange={onChange} />
-              <button type="submit">
-                <span>Save</span>
-              </button>
-            </form>
-          </>
+          <form className="edit_text_form" onSubmit={onSubmit}>
+            <input type="text" value={props.todo.text} onChange={onChange} />
+            <button type="submit">
+              <span>Save</span>
+            </button>
+          </form>
         )}
       </div>
       <style jsx>{`
@@ -119,7 +131,18 @@ const TodoItem = (props: IProps): JSX.Element => {
           content: "";
           position: absolute;
           bottom: -5px;
-          left: 0;
+          left: 50%;
+          width: 0;
+          height: 2px;
+          background-color: #25aad0;
+          transition: all 0.3s ease;
+        }
+
+        .todo_list p a::before {
+          content: "";
+          position: absolute;
+          bottom: -5px;
+          right: 50%;
           width: 0;
           height: 2px;
           background-color: #25aad0;
@@ -127,8 +150,13 @@ const TodoItem = (props: IProps): JSX.Element => {
         }
 
         .todo_list p:hover a::after {
-          /* 1%->100%로 채워지는 animation 구현 */
-          width: 100%;
+          /* 중앙에서 오른쪽으로 50%로 채워지는 animation 구현 */
+          width: 50%;
+        }
+
+        .todo_list p:hover a::before {
+          /* 중앙에서 왼쪽으로 50% 채워지는 animation 구현 */
+          width: 50%;
         }
 
         .btn_wrap {
