@@ -4,7 +4,7 @@ export const Header_Wrap = styled.header`
   display: flex;
   justify-content: center;
   height: 80px;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: #143352;
   color: white;
   transition: all 0.2s ease-out;
 

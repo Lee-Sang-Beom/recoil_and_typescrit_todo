@@ -6,7 +6,7 @@ export default function Header() {
       <Header_Wrap>
         <nav className="nav_bar">
           <ul>
-            <li>Input Todo</li>
+            <li>Todo</li>
             <li>Profile</li>
           </ul>
         </nav>
