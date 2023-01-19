@@ -93,7 +93,6 @@ export default function TodoList() {
           /* input box */
 
           flex-basis: 40%;
-
           display: flex;
           justify-content: space-around;
           align-items: center;
@@ -113,7 +112,6 @@ export default function TodoList() {
           line-height: 60px;
           text-align: center;
           font-size: 1.2rem;
-
           outline: none;
           border: 0.5px solid black;
         }
