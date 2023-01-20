@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ITodoItem } from "./TodoList";
 import axios from "axios";
+import { useMutation, useQueryClient } from "react-query";
 
 // 주의: 컴포넌트에게 전달되는 props는 key까지 포함하므로, 넘어오는 props를 재정의해주어야 함
 interface IProps {
@@ -9,26 +10,58 @@ interface IProps {
 }
 
 const TodoItem = (props: IProps): JSX.Element => {
+  const queryClient = useQueryClient();
   const [isEdit, setIsEdit] = useState<Boolean>(false);
   const [textList, setTextList] = useState<ITodoItem[]>([]);
   const [text, setText] = useState<string>("");
+
+  // delete 용도
+  const deleteQuery = useMutation(
+    async () => {
+      return await axios
+        .delete(`http://localhost:3001/todos/${props.todo.id}`)
+        .then(() => {
+          setTextList(
+            textList.filter((todoItem: ITodoItem) => {
+              return todoItem.id !== props.todo.id;
+            })
+          );
+        })
+        .then(() => alert("삭제되었습니다."))
+        .catch((err: Error) => console.log(err));
+    },
+    {
+      // onMutate 는 mutation 함수가 실행되기 전에 실행되고 mutation 함수가 받을 동일한 변수가 전달된다.
+      // optimistic update 사용 시 유용한 함수이다.
+      onMutate: (variable) => {
+        console.log("onMutate", variable);
+        // variable : {loginId: 'xxx', password; 'xxx'}
+      },
+      onError: (error, variable, context) => {
+        // error
+        console.log("error", variable, context);
+      },
+      // mutation이 성공하고 결과를 전달할 때 사용
+      onSuccess: (data, variables, context) => {
+        console.log("success", data, variables, context);
+
+        // 자동으로 get 요청 할 수 있도록 함
+        queryClient.invalidateQueries("getTodoList");
+      },
+
+      // mutation 이 성공해서 성공한 데이터 또는 error가 전달될 때 실행된다. (성공하든 실패하든 아무튼 결과가 전달된다)
+      onSettled: () => {
+        console.log("end");
+      },
+    }
+  );
 
   const handleEditMode = () => {
     setIsEdit((prev) => !prev);
   };
 
   const handleDelete = async () => {
-    await axios
-      .delete(`http://localhost:3001/todos/${props.todo.id}`)
-      .then(() => {
-        setTextList(
-          textList.filter((todoItem: ITodoItem) => {
-            return todoItem.id !== props.todo.id;
-          })
-        );
-      })
-      .then(() => alert("삭제되었습니다."))
-      .catch((err: Error) => console.log(err));
+    deleteQuery.mutate();
   };
 
   // edit mode 활성화 후, input에 가해지는 event

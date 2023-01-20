@@ -10,7 +10,6 @@ export interface ITodoItem {
 
 export default function TodoList() {
   const queryClient = useQueryClient();
-
   const [textList, setTextList] = useState<ITodoItem[]>([]);
   const [text, setText] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,28 +21,24 @@ export default function TodoList() {
   };
 
   // 단순히 불러오는 구문은 useQuery이용
-  const { isLoading, isError, data, error } = useQuery(
-    "getTodoList",
-    fetchTodoList,
-    {
-      refetchOnWindowFocus: false,
-      retry: 0,
+  const getQuery = useQuery("getTodoList", fetchTodoList, {
+    refetchOnWindowFocus: false,
+    retry: 0,
 
-      // 쿼리 성공 시, 실행되는 함수. (data는 성공 시 서버에서 넘어오는 response 값)
-      onSuccess: (data) => {
-        setText(""); // 최초 get 수행 시에도 input은 비어 있도록 구성
-        setTextList(data);
-      },
+    // 쿼리 성공 시, 실행되는 함수. (data는 성공 시 서버에서 넘어오는 response 값)
+    onSuccess: (data) => {
+      setText(""); // 최초 get 수행 시에도 input은 비어 있도록 구성
+      setTextList(data);
+    },
 
-      // 쿼리 실패 시, 실행되는 함수. (매개변수로, error 값을 받을 수 있다.)
-      onError: (error: Error) => {
-        console.log(error.message);
-      },
-    }
-  );
+    // 쿼리 실패 시, 실행되는 함수. (매개변수로, error 값을 받을 수 있다.)
+    onError: (error: Error) => {
+      console.log(error.message);
+    },
+  });
 
   // post 용도
-  const postMutation = useMutation(
+  const postQuery = useMutation(
     async () => {
       return await axios
         .post(`http://localhost:3001/todos`, {
@@ -55,17 +50,23 @@ export default function TodoList() {
         .catch(() => alert("등록 실패"));
     },
     {
+      // onMutate 는 mutation 함수가 실행되기 전에 실행되고 mutation 함수가 받을 동일한 변수가 전달된다.
+      // optimistic update 사용 시 유용한 함수이다.
       onMutate: (variable) => {
-        // console.log("onMutate", variable);
+        console.log("onMutate", variable);
         // variable : {loginId: 'xxx', password; 'xxx'}
       },
       onError: (error, variable, context) => {
         // error
+        console.log("error", variable, context);
       },
+      // mutation이 성공하고 결과를 전달할 때 사용
       onSuccess: (data, variables, context) => {
-        // console.log("success", data, variables, context);
+        console.log("success", data, variables, context);
         queryClient.invalidateQueries("getTodoList");
       },
+
+      // mutation 이 성공해서 성공한 데이터 또는 error가 전달될 때 실행된다. (성공하든 실패하든 아무튼 결과가 전달된다)
       onSettled: () => {
         console.log("end");
       },
@@ -81,7 +82,7 @@ export default function TodoList() {
   // input 태그에 사용자 일정을 입력한 후, 제출 로직을 구성
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    postMutation.mutate();
+    postQuery.mutate();
   };
 
   return (
