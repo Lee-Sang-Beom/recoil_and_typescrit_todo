@@ -1,55 +1,72 @@
-import { text } from "node:stream/consumers";
 import React, { useState } from "react";
-import { useRecoilState } from "recoil";
-import { textListAtom, textAtom, countAtom, todoListType } from "../../store";
+import { ITodoItem } from "./TodoList";
+import axios from "axios";
 
 // 주의: 컴포넌트에게 전달되는 props는 key까지 포함하므로, 넘어오는 props를 재정의해주어야 함
 interface IProps {
   key: number;
-  todo: todoListType;
+  todo: ITodoItem;
 }
+
 const TodoItem = (props: IProps): JSX.Element => {
   const [isEdit, setIsEdit] = useState<Boolean>(false);
-  const [textList, setTextList] = useRecoilState<todoListType[]>(textListAtom);
+  const [textList, setTextList] = useState<ITodoItem[]>([]);
+  const [text, setText] = useState<string>("");
 
   const handleEditMode = () => {
     setIsEdit((prev) => !prev);
   };
 
-  const handleDelete = () => {
-    const newTextList = textList.filter((todoItem) => {
-      return todoItem.id !== props.todo.id;
-    });
-
-    setTextList(newTextList);
-    // debug 2 : 삭제 후, newTextList의 변화
-    // console.log(newTextList);
+  const handleDelete = async () => {
+    await axios
+      .delete(`http://localhost:3001/todos/${props.todo.id}`)
+      .then(() => {
+        setTextList(
+          textList.filter((todoItem: ITodoItem) => {
+            return todoItem.id !== props.todo.id;
+          })
+        );
+      })
+      .then(() => alert("삭제되었습니다."))
+      .catch((err: Error) => console.log(err));
   };
 
   // edit mode 활성화 후, input에 가해지는 event
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-
-    const newTextList = textList.map((todoItem) => {
-      // 기존에 저장된 todoList의 데이터들 중, todoItem.id가
-      // 현재 선택되어 props로 전달된 todoData의 id와 일치할 경우,
-      // {id, text}를 보유중인 상황에서, id는 ...todoItem으로 spread, text는 새로이 입력된 value로 변경
-      // id가 일치하지 않는 경우는, textList에서 뽑아온 데이터가 다른 것이므로, {id,text}를 그대로 반환해야 함
-      if (todoItem.id === props.todo.id) {
-        return { ...todoItem, text: value };
-      } else {
-        return todoItem;
-      }
-    });
-
-    // debug 3 : 수정 중, newTextList의 변화
-    console.log(newTextList);
-    setTextList(newTextList);
+    setText(value);
   };
 
-  // edit 종료를 위한 확인 작업
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
+  // edit 종료를 위한 제출 작업 (put: 덮어쓰기 사용)
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    await axios
+      .put(`http://localhost:3001/todos/${props.todo.id}`, {
+        id: props.todo.id,
+        text: text,
+      })
+      .then(() => {
+        const newTextList = textList.map((textObj) => {
+          if (textObj.id === props.todo.id) {
+            /* 
+            textList 내의 요소와, 사용자가 선택한 todoItem과의 ID를 비교해
+            textObj={id, text} 중, text key에 해당하는 value만 
+            사용자가 입력한 e.target.value값으로 변경
+            */
+            return {
+              ...textObj, // ID
+              text: text, // text
+            };
+          }
+          return textObj;
+        });
+        setTextList(newTextList);
+      })
+      .then(() => alert("갱신이 성공하였습니다."))
+      .catch((err: Error) => alert("갱신이 실패하였습니다."));
+
+    // debug 3 : 수정 중, newTextList의 변화
     setIsEdit(false);
   };
 
@@ -72,7 +89,7 @@ const TodoItem = (props: IProps): JSX.Element => {
           </>
         ) : (
           <form className="edit_text_form" onSubmit={onSubmit}>
-            <input type="text" value={props.todo.text} onChange={onChange} />
+            <input type="text" value={text} onChange={onChange} />
             <button type="submit">
               <span>Save</span>
             </button>
@@ -80,22 +97,6 @@ const TodoItem = (props: IProps): JSX.Element => {
         )}
       </div>
       <style jsx>{`
-        .todo_list form {
-        }
-
-        .todo_list form input {
-        }
-
-        .todo_list form button {
-          background-color: #00ca00;
-          margin-left: 1rem;
-        }
-
-        .todo_list form button:hover {
-          background-color: #03a503;
-          transform: scale(0.95);
-        }
-
         /* 자리 교체 필요 */
 
         .todo_list {
@@ -194,6 +195,16 @@ const TodoItem = (props: IProps): JSX.Element => {
         }
         .btn_wrap button:nth-child(2):hover {
           background-color: #e21b1b;
+          transform: scale(0.95);
+        }
+
+        .todo_list form button {
+          background-color: #00ca00;
+          margin-left: 1rem;
+        }
+
+        .todo_list form button:hover {
+          background-color: #03a503;
           transform: scale(0.95);
         }
       `}</style>

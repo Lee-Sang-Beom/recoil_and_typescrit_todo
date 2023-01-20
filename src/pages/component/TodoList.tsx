@@ -1,25 +1,76 @@
-import { useEffect, useRef } from "react";
-import { useRecoilState } from "recoil";
-import { textListAtom, textAtom, countAtom, todoListType } from "../../store";
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import TodoItem from "./TodoItem";
 
-interface MutableRefObject<T> {
-  current: T;
-}
-
-interface RefObject<T> {
-  readonly current: T | null;
+export interface ITodoItem {
+  id: number;
+  text: string;
 }
 
 export default function TodoList() {
-  const [textList, setTextList] = useRecoilState<todoListType[]>(textListAtom);
-  const [text, setText] = useRecoilState<string>(textAtom);
-  const [id, setId] = useRecoilState<number>(countAtom);
+  const queryClient = useQueryClient();
+
+  const [textList, setTextList] = useState<ITodoItem[]>([]);
+  const [text, setText] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  const fetchTodoList = async () => {
+    return await axios
+      .get("http://localhost:3001/todos")
+      .then((res) => res.data);
+  };
+
+  // 단순히 불러오는 구문은 useQuery이용
+  const { isLoading, isError, data, error } = useQuery(
+    "getTodoList",
+    fetchTodoList,
+    {
+      refetchOnWindowFocus: false,
+      retry: 0,
+
+      // 쿼리 성공 시, 실행되는 함수. (data는 성공 시 서버에서 넘어오는 response 값)
+      onSuccess: (data) => {
+        setText(""); // 최초 get 수행 시에도 input은 비어 있도록 구성
+        setTextList(data);
+      },
+
+      // 쿼리 실패 시, 실행되는 함수. (매개변수로, error 값을 받을 수 있다.)
+      onError: (error: Error) => {
+        console.log(error.message);
+      },
+    }
+  );
+
+  // post 용도
+  const postMutation = useMutation(
+    async () => {
+      return await axios
+        .post(`http://localhost:3001/todos`, {
+          text: text,
+        })
+        .then(() => {
+          alert("정상 등록");
+        })
+        .catch(() => alert("등록 실패"));
+    },
+    {
+      onMutate: (variable) => {
+        // console.log("onMutate", variable);
+        // variable : {loginId: 'xxx', password; 'xxx'}
+      },
+      onError: (error, variable, context) => {
+        // error
+      },
+      onSuccess: (data, variables, context) => {
+        // console.log("success", data, variables, context);
+        queryClient.invalidateQueries("getTodoList");
+      },
+      onSettled: () => {
+        console.log("end");
+      },
+    }
+  );
 
   // input 태그에 값을 입력할 때, state의 변화를 관리
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,28 +81,7 @@ export default function TodoList() {
   // input 태그에 사용자 일정을 입력한 후, 제출 로직을 구성
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    // todoList에 새로운 todo를 추가하기 위하여, id를 포함한 새로운 객체로서 구성한다.
-    const newText = {
-      id,
-      text,
-    };
-
-    // textList 갱신
-    setTextList((prev) => {
-      /*
-        debug 1 : 사용자 입력에 따른 불변성 유지와 state 갱신부
-        console.log("구조분해 미할당", prev);
-        console.log("구조분해할당 prev", ...prev); 
-      */
-      return [...prev, newText];
-    });
-
-    // ID 갱신
-    setId((prev) => prev + 1);
-
-    // 입력 후, input 창 초기화
-    setText("");
+    postMutation.mutate();
   };
 
   return (
@@ -75,7 +105,7 @@ export default function TodoList() {
         {/* todoList output section */}
         <section className="column_col2">
           {textList &&
-            textList.map((todo: todoListType) => (
+            textList.map((todo: ITodoItem) => (
               <TodoItem todo={todo} key={todo.id} />
             ))}
         </section>
