@@ -1,3 +1,4 @@
+import GetQuery from "@/hooks/getQuery";
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
@@ -20,22 +21,8 @@ export default function TodoList() {
       .then((res) => res.data);
   };
 
-  // 단순히 불러오는 구문은 useQuery이용
-  const getQuery = useQuery("getTodoList", fetchTodoList, {
-    refetchOnWindowFocus: false,
-    retry: 0,
-
-    // 쿼리 성공 시, 실행되는 함수. (data는 성공 시 서버에서 넘어오는 response 값)
-    onSuccess: (data) => {
-      setText(""); // 최초 get 수행 시에도 input은 비어 있도록 구성
-      setTextList(data);
-    },
-
-    // 쿼리 실패 시, 실행되는 함수. (매개변수로, error 값을 받을 수 있다.)
-    onError: (error: Error) => {
-      console.log(error.message);
-    },
-  });
+  // hooks/query.ts로 분리
+  GetQuery(fetchTodoList, setText, setTextList);
 
   // post 용도
   const postQuery = useMutation(
@@ -58,7 +45,7 @@ export default function TodoList() {
       },
       onError: (error, variable, context) => {
         // error
-        console.log("error", error, variable, context);
+        console.log("error", variable, context);
       },
       // mutation이 성공하고 결과를 전달할 때 사용
       onSuccess: (data, variables, context) => {

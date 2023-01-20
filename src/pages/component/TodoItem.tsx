@@ -109,6 +109,7 @@ const TodoItem = (props: IProps): JSX.Element => {
       },
     }
   );
+
   const handleEditMode = () => {
     setIsEdit((prev) => !prev);
   };
