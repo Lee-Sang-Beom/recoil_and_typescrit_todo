@@ -58,7 +58,7 @@ export default function TodoList() {
       },
       onError: (error, variable, context) => {
         // error
-        console.log("error", variable, context);
+        console.log("error", error, variable, context);
       },
       // mutation이 성공하고 결과를 전달할 때 사용
       onSuccess: (data, variables, context) => {

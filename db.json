@@ -1,3 +1,12 @@
 {
-  "todos": []
+  "todos": [
+    {
+      "text": "application",
+      "id": 2
+    },
+    {
+      "text": "gratis",
+      "id": 4
+    }
+  ]
 }
