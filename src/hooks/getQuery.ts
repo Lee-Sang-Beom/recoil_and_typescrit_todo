@@ -13,7 +13,7 @@ export default function getQuery(
   setText: Dispatch<SetStateAction<string>>,
   setTextList: Dispatch<SetStateAction<ITodoItem[]>>
 ) {
-  useQuery("getTodoList", func, {
+  const { isLoading } = useQuery("getTodoList", func, {
     refetchOnWindowFocus: false,
     retry: 0,
 
@@ -28,4 +28,10 @@ export default function getQuery(
       console.log(error.message);
     },
   });
+
+  if (isLoading) {
+    console.log("loading...");
+  } else {
+    console.log("complete(GET) data load");
+  }
 }
