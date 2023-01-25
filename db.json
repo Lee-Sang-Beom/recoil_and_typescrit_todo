@@ -2,11 +2,15 @@
   "todos": [
     {
       "id": 2,
-      "text": "ewqewq"
+      "text": "test2"
     },
     {
       "text": "test application",
       "id": 3
+    },
+    {
+      "text": "123",
+      "id": 4
     }
   ]
 }
