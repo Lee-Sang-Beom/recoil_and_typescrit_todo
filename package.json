@@ -21,6 +21,7 @@
     "eslint-config-next": "13.1.2",
     "json-server": "^0.17.1",
     "next": "13.1.2",
+    "react-data-table-component": "^7.5.3",
     "react-is": "16.8",
     "react-query": "^3.39.2",
     "recoil": "^0.7.6",
